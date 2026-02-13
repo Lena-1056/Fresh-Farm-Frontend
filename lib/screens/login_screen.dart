@@ -1,36 +1,188 @@
 import 'package:flutter/material.dart';
 import '../core/routes.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_textfield.dart';
+import '../services/api_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+
+  final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool isLoading = false;
+
+  void handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final result = await ApiService.login(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+      );
+
+      setState(() => isLoading = false);
+
+      // ✅ FIXED CONDITION
+      if (result["id"] != null) {
+
+        String role = result["role"];
+
+        if (role == "FARMER") {
+          Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
+        } else if (role == "BUYER") {
+          Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.role);
+        }
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Login Failed")),
+        );
+      }
+
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const CustomTextField(hint: "Email"),
-            const SizedBox(height: 15),
-            const CustomTextField(hint: "Password", isPassword: true),
-            const SizedBox(height: 20),
-            CustomButton(
-              text: "Login",
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, AppRoutes.role);
-              },
+      backgroundColor: const Color(0xFFF5F8F5),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+
+                  const Icon(Icons.eco,
+                      size: 70, color: Color(0xFF0DF20D)),
+
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    "Welcome Back",
+                    style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  _buildTextField(
+                    controller: emailController,
+                    hint: "Email",
+                    icon: Icons.email_outlined,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _buildTextField(
+                    controller: passwordController,
+                    hint: "Password",
+                    icon: Icons.lock_outline,
+                    isPassword: true,
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0DF20D),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: isLoading ? null : handleLogin,
+                      child: isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.black,
+                            )
+                          : const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, AppRoutes.signup);
+                    },
+                    child: const Text(
+                      "Don't have an account? Sign Up",
+                      style: TextStyle(
+                        color: Color(0xFF0DF20D),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.signup);
-              },
-              child: const Text("Create Account"),
-            )
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword ? _obscurePassword : false,
+      validator: (value) =>
+          value == null || value.isEmpty ? "Required" : null,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
     );
