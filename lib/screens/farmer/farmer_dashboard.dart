@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/routes.dart';
 import '../../providers/product_provider.dart';
+import '../../models/product_model.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -11,34 +13,36 @@ class FarmerDashboard extends StatefulWidget {
 }
 
 class _FarmerDashboardState extends State<FarmerDashboard> {
-  String role = "farmer";
   int selectedIndex = 0;
+  String role = "farmer";
 
   final Color primaryColor = const Color(0xFF0DF20D);
 
   void _onNavTap(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
+    if (index == 0) return;
 
     if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.farmerOrders);
+    }
+
+    if (index == 2) {
+      Navigator.pushNamed(context, AppRoutes.farmerInventory);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Always keep dashboard highlighted when this screen loads
+    selectedIndex = 0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F5),
 
-      /// FLOATING ADD BUTTON WITH CURSOR
+      /// FLOATING ADD BUTTON
       floatingActionButton: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: FloatingActionButton(
           backgroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.addProduct);
           },
@@ -56,10 +60,10 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
-            _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
-            _bottomNavItem(icon: Icons.storefront, label: "Market", index: 2),
-            _bottomNavItem(icon: Icons.settings, label: "Settings", index: 3),
+            _bottomNavItem(Icons.dashboard, "Dashboard", 0),
+            _bottomNavItem(Icons.receipt_long, "Orders", 1),
+            _bottomNavItem(Icons.inventory_2_outlined, "Inventory", 2),
+            _bottomNavItem(Icons.person, "Profile", 3),
           ],
         ),
       ),
@@ -68,20 +72,48 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            /// ROLE SWITCH
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _roleIconButton(value: "farmer", icon: Icons.agriculture),
-                    const SizedBox(width: 10),
-                    _roleIconButton(value: "buyer", icon: Icons.shopping_bag),
+            /// ================= ROLE SWITCH WITH ICONS =================
+            Align(
+              alignment: Alignment.centerRight,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: ToggleButtons(
+                  borderRadius: BorderRadius.circular(30),
+                  fillColor: primaryColor,
+                  selectedColor: Colors.white,
+                  color: Colors.grey,
+                  isSelected: [role == "farmer", role == "buyer"],
+                  onPressed: (index) {
+                    if (index == 0) {
+                      setState(() => role = "farmer");
+                    } else {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.buyerDashboard,
+                      );
+                    }
+                  },
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          Icon(Icons.agriculture, size: 18),
+                          SizedBox(width: 6),
+                          Text("Farmer"),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          Icon(Icons.shopping_bag, size: 18),
+                          SizedBox(width: 6),
+                          Text("Buyer"),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -89,21 +121,14 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
 
             const SizedBox(height: 25),
 
-            /// HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  "Farmer Joe",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                Icon(Icons.notifications),
-              ],
+            const Text(
+              "Farmer Joe",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 25),
 
-            /// STATS
+            /// ================= STATS =================
             Consumer<ProductProvider>(
               builder: (context, provider, child) {
                 return Row(
@@ -118,10 +143,37 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                     Expanded(
                       child: _statCard(
                         "Active",
-                        provider.products.length.toString(),
+                        provider.products
+                            .where((p) => p.isOnline)
+                            .length
+                            .toString(),
                       ),
                     ),
                   ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 25),
+
+            /// ================= MY PRODUCTS =================
+            const Text(
+              "My Products",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 12),
+
+            Consumer<ProductProvider>(
+              builder: (context, provider, child) {
+                if (provider.products.isEmpty) {
+                  return const Text("No products yet");
+                }
+
+                return Column(
+                  children: provider.products.map((product) {
+                    return _productCard(product);
+                  }).toList(),
                 );
               },
             ),
@@ -131,35 +183,61 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// ROLE BUTTON WITH CURSOR ONLY
-  Widget _roleIconButton({required String value, required IconData icon}) {
-    final bool isSelected = role == value;
-
+  /// ================= PRODUCT CARD =================
+  Widget _productCard(ProductModel product) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          if (value == "buyer") {
-            Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
-          } else {
-            setState(() {
-              role = "farmer";
-            });
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isSelected ? Colors.white : Colors.transparent,
-          ),
-          child: Icon(icon, color: isSelected ? primaryColor : Colors.grey),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: SizedBox(
+                height: 60,
+                width: 60,
+                child: product.webImage != null
+                    ? Image.memory(product.webImage!, fit: BoxFit.cover)
+                    : product.imagePath != null
+                    ? Image.file(File(product.imagePath!), fit: BoxFit.cover)
+                    : Container(
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.image),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "₹${product.price.toStringAsFixed(0)} per ${product.quantityType}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// STATS CARD
   Widget _statCard(String title, String value) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -182,12 +260,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// BOTTOM NAV ITEM WITH CURSOR ONLY (No Hover Effect)
-  Widget _bottomNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  Widget _bottomNavItem(IconData icon, String label, int index) {
     final bool isActive = selectedIndex == index;
 
     return MouseRegion(

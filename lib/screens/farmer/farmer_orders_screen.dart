@@ -62,6 +62,11 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
     if (index == 0) {
       Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
     }
+
+    /// ✅ INVENTORY NAVIGATION ADDED
+    if (index == 2) {
+      Navigator.pushReplacementNamed(context, AppRoutes.farmerInventory);
+    }
   }
 
   void _handleFilter(String value) {
@@ -134,8 +139,6 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           ),
         ),
         const SizedBox(width: 12),
-
-        /// FILTER BUTTON WITH CURSOR
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: PopupMenuButton<String>(
@@ -201,7 +204,6 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             const SizedBox(height: 16),
             ...order.items.map((e) => Text(e)).toList(),
             const SizedBox(height: 20),
-
             if (order.status != OrderStatus.completed)
               MouseRegion(
                 cursor: SystemMouseCursors.click,
@@ -272,8 +274,15 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
         children: [
           _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
           _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
-          _bottomNavItem(icon: Icons.storefront, label: "Market", index: 2),
-          _bottomNavItem(icon: Icons.settings, label: "Settings", index: 3),
+
+          /// ✅ UPDATED INVENTORY ICON
+          _bottomNavItem(
+            icon: Icons.inventory_2_outlined,
+            label: "Inventory",
+            index: 2,
+          ),
+
+          _bottomNavItem(icon: Icons.person, label: "Profile", index: 3),
         ],
       ),
     );

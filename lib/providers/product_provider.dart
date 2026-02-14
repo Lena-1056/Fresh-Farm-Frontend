@@ -10,4 +10,16 @@ class ProductProvider extends ChangeNotifier {
     _products.add(product);
     notifyListeners();
   }
+
+  /// TOGGLE VISIBILITY
+  void toggleVisibility(int index, bool value) {
+    _products[index].isOnline = value;
+    notifyListeners();
+  }
+
+  /// DELETE (Optional future)
+  void removeProduct(int index) {
+    _products.removeAt(index);
+    notifyListeners();
+  }
 }

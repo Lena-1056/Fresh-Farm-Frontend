@@ -15,6 +15,8 @@ class ProductModel {
   final Uint8List? webImage;
   final String? imagePath;
 
+  bool isOnline;
+
   ProductModel({
     required this.name,
     required this.category,
@@ -27,5 +29,6 @@ class ProductModel {
     required this.harvestDate,
     this.webImage,
     this.imagePath,
+    this.isOnline = true,
   });
 }
