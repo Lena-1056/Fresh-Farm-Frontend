@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/routes.dart';
+import '../../models/product_model.dart';
+import '../../providers/product_provider.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -15,27 +19,16 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F5),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF0DF20D),
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.addProduct);
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-
       body: SafeArea(
         child: Stack(
           children: [
-
             /// MAIN CONTENT
             Padding(
-              padding: const EdgeInsets.only(bottom: 80),
+              padding: const EdgeInsets.only(bottom: 100),
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-
-                  /// ROLE SWITCH PILL
+                  /// ROLE SWITCH
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(4),
@@ -55,145 +48,127 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
 
                   const SizedBox(height: 25),
 
-                  /// PROFILE HEADER
+                  /// HEADER
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        children: [
-                          const CircleAvatar(
+                        children: const [
+                          CircleAvatar(
                             radius: 28,
                             backgroundImage: NetworkImage(
-                                "https://images.unsplash.com/photo-1500937386664-56d1dfef3854"),
+                              "https://images.unsplash.com/photo-1500937386664-56d1dfef3854",
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          const Column(
+                          SizedBox(width: 12),
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "Welcome Back",
                                 style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey),
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                               Text(
                                 "Farmer Joe",
                                 style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [
-                            BoxShadow(
-                              blurRadius: 6,
-                              color: Colors.black12,
-                            )
-                          ],
-                        ),
-                        child: const Icon(Icons.notifications),
-                      )
+                      const Icon(Icons.notifications),
                     ],
                   ),
 
                   const SizedBox(height: 25),
 
-                  /// STATS GRID
-                  Row(
-                    children: [
-                      Expanded(child: statCard("Products", "24")),
-                      const SizedBox(width: 12),
-                      Expanded(child: statCard("Active", "12")),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// REVENUE CARD
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          blurRadius: 8,
-                          color: Colors.black12,
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        const Text(
-                          "Total Revenue",
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        const Text(
-                          "₹2,48,000",
-                          style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        /// SIMPLE BAR CHART
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                          children: List.generate(7, (index) {
-                            double height = (index + 2) * 12;
-                            return Container(
-                              width: 12,
-                              height: height,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0DF20D)
-                                    .withOpacity(0.7),
-                                borderRadius:
-                                    BorderRadius.circular(6),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
+                  /// PRODUCT STATS
+                  Consumer<ProductProvider>(
+                    builder: (context, provider, child) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: statCard(
+                              "Products",
+                              provider.products.length.toString(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: statCard(
+                              "Active",
+                              provider.products.length.toString(),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 30),
 
-                  /// RECENT ORDERS
                   const Text(
-                    "Recent Orders",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
+                    "My Products",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 15),
 
-                  orderTile("Sarah Miller", "₹4500", "Pending"),
-                  orderTile("Robert Chen", "₹1250", "Shipped"),
-                  orderTile("Emily Watson", "₹3800", "Shipped"),
+                  Consumer<ProductProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.products.isEmpty) {
+                        return const Text(
+                          "No products added yet",
+                          style: TextStyle(color: Colors.grey),
+                        );
+                      }
+
+                      return Column(
+                        children: provider.products
+                            .map((product) => productCard(product))
+                            .toList(),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
 
-            /// BOTTOM NAVIGATION
+            /// ✅ ADD BUTTON ABOVE BOTTOM NAV
+            Positioned(
+              bottom: 85,
+              right: 20,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.addProduct);
+                  },
+                  child: Container(
+                    height: 56,
+                    width: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0DF20D),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(blurRadius: 10, color: Colors.black26),
+                      ],
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 28),
+                  ),
+                ),
+              ),
+            ),
+
+            /// BOTTOM NAV
             Positioned(
               bottom: 0,
               left: 0,
@@ -202,16 +177,10 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                 height: 70,
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 10,
-                      color: Colors.black12,
-                    )
-                  ],
+                  boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
                 ),
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: const [
                     BottomNav(Icons.dashboard, "Dashboard", true),
                     BottomNav(Icons.receipt_long, "Orders", false),
@@ -227,121 +196,120 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// ROLE BUTTON
   Widget buildRoleButton(String value, IconData icon) {
     final bool isSelected = role == value;
 
-    return GestureDetector(
-      onTap: () {
-        if (value == "buyer") {
-          Navigator.pushReplacementNamed(
-              context, AppRoutes.buyerDashboard);
-        } else {
-          setState(() {
-            role = "farmer";
-          });
-        }
-      },
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.white
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Icon(
-          icon,
-          color: isSelected
-              ? const Color(0xFF0DF20D)
-              : Colors.grey,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (value == "buyer") {
+            Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
+          } else {
+            setState(() {
+              role = "farmer";
+            });
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Icon(
+            icon,
+            color: isSelected ? const Color(0xFF0DF20D) : Colors.grey,
+          ),
         ),
       ),
     );
   }
 
-  /// STAT CARD
   Widget statCard(String title, String value) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(blurRadius: 8, color: Colors.black12)
-        ],
+        boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 13, color: Colors.grey)),
+          Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(height: 10),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
-  /// ORDER TILE
-  Widget orderTile(String name, String price, String status) {
+  Widget productCard(ProductModel product) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
       ),
       child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              Text(name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(price,
-                  style: const TextStyle(
-                      color: Color(0xFF0DF20D),
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 5),
+            height: 60,
+            width: 60,
             decoration: BoxDecoration(
-              color: status == "Pending"
-                  ? Colors.orange.shade100
-                  : const Color(0xFF0DF20D).withOpacity(0.15),
-              borderRadius:
-                  BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.grey.shade200,
             ),
-            child: Text(
-              status,
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: status == "Pending"
-                      ? Colors.orange
-                      : const Color(0xFF0DF20D)),
+            child: product.imagePath != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      File(product.imagePath!),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(Icons.image, color: Colors.grey),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "${product.quantity} ${product.quantityType} • ₹${product.price}",
+                  style: const TextStyle(
+                    color: Color(0xFF0DF20D),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  product.location,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 }
 
-/// BOTTOM NAV ITEM
 class BottomNav extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -351,24 +319,23 @@ class BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment:
-          MainAxisAlignment.center,
-      children: [
-        Icon(icon,
-            color: active
-                ? const Color(0xFF0DF20D)
-                : Colors.grey),
-        const SizedBox(height: 4),
-        Text(label,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: active ? const Color(0xFF0DF20D) : Colors.grey),
+          const SizedBox(height: 4),
+          Text(
+            label,
             style: TextStyle(
-                fontSize: 11,
-                fontWeight:
-                    active ? FontWeight.bold : FontWeight.normal,
-                color: active
-                    ? const Color(0xFF0DF20D)
-                    : Colors.grey))
-      ],
+              fontSize: 11,
+              fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              color: active ? const Color(0xFF0DF20D) : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
