@@ -1,3 +1,280 @@
+// import 'dart:io';
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+// import '../../core/routes.dart';
+// import '../../models/product_model.dart';
+// import '../../providers/product_provider.dart';
+
+// class FarmerDashboard extends StatefulWidget {
+//   const FarmerDashboard({super.key});
+
+//   @override
+//   State<FarmerDashboard> createState() => _FarmerDashboardState();
+// }
+
+// class _FarmerDashboardState extends State<FarmerDashboard> {
+//   String role = "farmer";
+//   int selectedIndex = 0;
+
+//   final Color primaryColor = const Color(0xFF0DF20D);
+
+//   void _onNavTap(int index) {
+//     setState(() {
+//       selectedIndex = index;
+//     });
+
+//     if (index == 1) {
+//       Navigator.pushNamed(context, AppRoutes.farmerOrders);
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: const Color(0xFFF5F8F5),
+
+//       /// FLOATING ADD BUTTON
+//       floatingActionButton: MouseRegion(
+//         cursor: SystemMouseCursors.click,
+//         child: FloatingActionButton(
+//           backgroundColor: primaryColor,
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(18),
+//           ),
+//           onPressed: () {
+//             Navigator.pushNamed(context, AppRoutes.addProduct);
+//           },
+//           child: const Icon(Icons.add, color: Colors.white),
+//         ),
+//       ),
+
+//       /// BOTTOM NAVIGATION
+//       bottomNavigationBar: Container(
+//         height: 80,
+//         decoration: const BoxDecoration(
+//           color: Colors.white,
+//           boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+//         ),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceAround,
+//           children: [
+//             _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
+//             _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
+//             _bottomNavItem(icon: Icons.storefront, label: "Market", index: 2),
+//             _bottomNavItem(icon: Icons.settings, label: "Settings", index: 3),
+//           ],
+//         ),
+//       ),
+
+//       body: SafeArea(
+//         child: ListView(
+//           padding: const EdgeInsets.all(16),
+//           children: [
+//             /// ROLE SWITCH
+//             Center(
+//               child: Container(
+//                 padding: const EdgeInsets.all(6),
+//                 decoration: BoxDecoration(
+//                   color: Colors.grey.shade200,
+//                   borderRadius: BorderRadius.circular(40),
+//                 ),
+//                 child: Row(
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     _roleIconButton(value: "farmer", icon: Icons.agriculture),
+//                     const SizedBox(width: 10),
+//                     _roleIconButton(value: "buyer", icon: Icons.shopping_bag),
+//                   ],
+//                 ),
+//               ),
+//             ),
+
+//             const SizedBox(height: 25),
+
+//             /// HEADER
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: const [
+//                 Text(
+//                   "Farmer Joe",
+//                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+//                 ),
+//                 Icon(Icons.notifications),
+//               ],
+//             ),
+
+//             const SizedBox(height: 25),
+
+//             /// STATS
+//             Consumer<ProductProvider>(
+//               builder: (context, provider, child) {
+//                 return Row(
+//                   children: [
+//                     Expanded(
+//                       child: _statCard(
+//                         "Products",
+//                         provider.products.length.toString(),
+//                       ),
+//                     ),
+//                     const SizedBox(width: 12),
+//                     Expanded(
+//                       child: _statCard(
+//                         "Active",
+//                         provider.products.length.toString(),
+//                       ),
+//                     ),
+//                   ],
+//                 );
+//               },
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   /// ROLE BUTTON
+
+//   Widget _roleIconButton({required String value, required IconData icon}) {
+//     final bool isSelected = role == value;
+
+//     return MouseRegion(
+//       cursor: SystemMouseCursors.click,
+//       child: GestureDetector(
+//         onTap: () {
+//           if (value == "buyer") {
+//             Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
+//           } else {
+//             setState(() {
+//               role = "farmer";
+//             });
+//           }
+//         },
+//         child: Container(
+//           padding: const EdgeInsets.all(12),
+//           decoration: BoxDecoration(
+//             shape: BoxShape.circle,
+//             color: isSelected ? Colors.white : Colors.transparent,
+//           ),
+//           child: Icon(icon, color: isSelected ? primaryColor : Colors.grey),
+//         ),
+//       ),
+//     );
+//   }
+
+//   /// STATS CARD
+
+//   Widget _statCard(String title, String value) {
+//     return Container(
+//       padding: const EdgeInsets.all(20),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(22),
+//         boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(title, style: const TextStyle(color: Colors.grey)),
+//           const SizedBox(height: 10),
+//           Text(
+//             value,
+//             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   /// BOTTOM NAV WITH HOVER CIRCLE
+
+//   Widget _bottomNavItem({
+//     required IconData icon,
+//     required String label,
+//     required int index,
+//   }) {
+//     final bool isActive = selectedIndex == index;
+
+//     return _HoverNavItem(
+//       icon: icon,
+//       label: label,
+//       isActive: isActive,
+//       primaryColor: primaryColor,
+//       onTap: () => _onNavTap(index),
+//     );
+//   }
+// }
+
+// /// HOVER NAV ITEM WIDGET
+
+// class _HoverNavItem extends StatefulWidget {
+//   final IconData icon;
+//   final String label;
+//   final bool isActive;
+//   final Color primaryColor;
+//   final VoidCallback onTap;
+
+//   const _HoverNavItem({
+//     required this.icon,
+//     required this.label,
+//     required this.isActive,
+//     required this.primaryColor,
+//     required this.onTap,
+//   });
+
+//   @override
+//   State<_HoverNavItem> createState() => _HoverNavItemState();
+// }
+
+// class _HoverNavItemState extends State<_HoverNavItem> {
+//   bool isHovering = false;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MouseRegion(
+//       cursor: SystemMouseCursors.click,
+//       onEnter: (_) => setState(() => isHovering = true),
+//       onExit: (_) => setState(() => isHovering = false),
+//       child: GestureDetector(
+//         onTap: widget.onTap,
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             AnimatedContainer(
+//               duration: const Duration(milliseconds: 200),
+//               padding: const EdgeInsets.all(10),
+//               decoration: BoxDecoration(
+//                 shape: BoxShape.circle,
+//                 color: widget.isActive
+//                     ? widget.primaryColor.withOpacity(0.15)
+//                     : isHovering
+//                     ? widget.primaryColor.withOpacity(0.08)
+//                     : Colors.transparent,
+//               ),
+//               child: Icon(
+//                 widget.icon,
+//                 size: 26,
+//                 color: widget.isActive ? widget.primaryColor : Colors.grey,
+//               ),
+//             ),
+//             const SizedBox(height: 5),
+//             Text(
+//               widget.label,
+//               style: TextStyle(
+//                 fontSize: 12,
+//                 fontWeight: widget.isActive
+//                     ? FontWeight.bold
+//                     : FontWeight.normal,
+//                 color: widget.isActive ? widget.primaryColor : Colors.grey,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+/*
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,181 +291,113 @@ class FarmerDashboard extends StatefulWidget {
 
 class _FarmerDashboardState extends State<FarmerDashboard> {
   String role = "farmer";
+  int selectedIndex = 0;
+
+  final Color primaryColor = const Color(0xFF0DF20D);
+
+  void _onNavTap(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+
+    if (index == 1) {
+      Navigator.pushNamed(context, AppRoutes.farmerOrders);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F5),
-      body: SafeArea(
-        child: Stack(
+
+      /// FLOATING ADD BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: primaryColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.addProduct);
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+
+      /// BOTTOM NAVIGATION (No Hover)
+      bottomNavigationBar: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            /// MAIN CONTENT
-            Padding(
-              padding: const EdgeInsets.only(bottom: 100),
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  /// ROLE SWITCH
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          buildRoleButton("farmer", Icons.agriculture),
-                          buildRoleButton("buyer", Icons.shopping_bag),
-                        ],
-                      ),
-                    ),
-                  ),
+            _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
+            _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
+            _bottomNavItem(icon: Icons.storefront, label: "Market", index: 2),
+            _bottomNavItem(icon: Icons.settings, label: "Settings", index: 3),
+          ],
+        ),
+      ),
 
-                  const SizedBox(height: 25),
-
-                  /// HEADER
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: const [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundImage: NetworkImage(
-                              "https://images.unsplash.com/photo-1500937386664-56d1dfef3854",
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Welcome Back",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Text(
-                                "Farmer Joe",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const Icon(Icons.notifications),
-                    ],
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  /// PRODUCT STATS
-                  Consumer<ProductProvider>(
-                    builder: (context, provider, child) {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: statCard(
-                              "Products",
-                              provider.products.length.toString(),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: statCard(
-                              "Active",
-                              provider.products.length.toString(),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  const Text(
-                    "My Products",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  Consumer<ProductProvider>(
-                    builder: (context, provider, child) {
-                      if (provider.products.isEmpty) {
-                        return const Text(
-                          "No products added yet",
-                          style: TextStyle(color: Colors.grey),
-                        );
-                      }
-
-                      return Column(
-                        children: provider.products
-                            .map((product) => productCard(product))
-                            .toList(),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
-            ),
-
-            /// ✅ ADD BUTTON ABOVE BOTTOM NAV
-            Positioned(
-              bottom: 85,
-              right: 20,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.addProduct);
-                  },
-                  child: Container(
-                    height: 56,
-                    width: 56,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0DF20D),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(blurRadius: 10, color: Colors.black26),
-                      ],
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 28),
-                  ),
-                ),
-              ),
-            ),
-
-            /// BOTTOM NAV
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            /// ROLE SWITCH
+            Center(
               child: Container(
-                height: 70,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(40),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
-                    BottomNav(Icons.dashboard, "Dashboard", true),
-                    BottomNav(Icons.receipt_long, "Orders", false),
-                    BottomNav(Icons.storefront, "Market", false),
-                    BottomNav(Icons.settings, "Settings", false),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _roleIconButton(value: "farmer", icon: Icons.agriculture),
+                    const SizedBox(width: 10),
+                    _roleIconButton(value: "buyer", icon: Icons.shopping_bag),
                   ],
                 ),
               ),
+            ),
+
+            const SizedBox(height: 25),
+
+            /// HEADER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  "Farmer Joe",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                Icon(Icons.notifications),
+              ],
+            ),
+
+            const SizedBox(height: 25),
+
+            /// STATS
+            Consumer<ProductProvider>(
+              builder: (context, provider, child) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(
+                        "Products",
+                        provider.products.length.toString(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _statCard(
+                        "Active",
+                        provider.products.length.toString(),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -196,7 +405,221 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  Widget buildRoleButton(String value, IconData icon) {
+  /// ROLE BUTTON (No Hover)
+  Widget _roleIconButton({required String value, required IconData icon}) {
+    final bool isSelected = role == value;
+
+    return GestureDetector(
+      onTap: () {
+        if (value == "buyer") {
+          Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
+        } else {
+          setState(() {
+            role = "farmer";
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? Colors.white : Colors.transparent,
+        ),
+        child: Icon(icon, color: isSelected ? primaryColor : Colors.grey),
+      ),
+    );
+  }
+
+  /// STATS CARD
+  Widget _statCard(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// SIMPLE BOTTOM NAV ITEM (No Hover Widget)
+  Widget _bottomNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final bool isActive = selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onNavTap(index),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 26, color: isActive ? primaryColor : Colors.grey),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? primaryColor : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+*/
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/routes.dart';
+import '../../models/product_model.dart';
+import '../../providers/product_provider.dart';
+
+class FarmerDashboard extends StatefulWidget {
+  const FarmerDashboard({super.key});
+
+  @override
+  State<FarmerDashboard> createState() => _FarmerDashboardState();
+}
+
+class _FarmerDashboardState extends State<FarmerDashboard> {
+  String role = "farmer";
+  int selectedIndex = 0;
+
+  final Color primaryColor = const Color(0xFF0DF20D);
+
+  void _onNavTap(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+
+    if (index == 1) {
+      Navigator.pushNamed(context, AppRoutes.farmerOrders);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F8F5),
+
+      /// FLOATING ADD BUTTON WITH CURSOR
+      floatingActionButton: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: FloatingActionButton(
+          backgroundColor: primaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.addProduct);
+          },
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ),
+
+      /// BOTTOM NAVIGATION
+      bottomNavigationBar: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
+            _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
+            _bottomNavItem(icon: Icons.storefront, label: "Market", index: 2),
+            _bottomNavItem(icon: Icons.settings, label: "Settings", index: 3),
+          ],
+        ),
+      ),
+
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            /// ROLE SWITCH
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _roleIconButton(value: "farmer", icon: Icons.agriculture),
+                    const SizedBox(width: 10),
+                    _roleIconButton(value: "buyer", icon: Icons.shopping_bag),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            /// HEADER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text(
+                  "Farmer Joe",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                Icon(Icons.notifications),
+              ],
+            ),
+
+            const SizedBox(height: 25),
+
+            /// STATS
+            Consumer<ProductProvider>(
+              builder: (context, provider, child) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(
+                        "Products",
+                        provider.products.length.toString(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _statCard(
+                        "Active",
+                        provider.products.length.toString(),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// ROLE BUTTON WITH CURSOR ONLY
+  Widget _roleIconButton({required String value, required IconData icon}) {
     final bool isSelected = role == value;
 
     return MouseRegion(
@@ -212,129 +635,67 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
+            shape: BoxShape.circle,
             color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
           ),
-          child: Icon(
-            icon,
-            color: isSelected ? const Color(0xFF0DF20D) : Colors.grey,
-          ),
+          child: Icon(icon, color: isSelected ? primaryColor : Colors.grey),
         ),
       ),
     );
   }
 
-  Widget statCard(String title, String value) {
+  /// STATS CARD
+  Widget _statCard(String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Text(title, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget productCard(ProductModel product) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade200,
-            ),
-            child: product.imagePath != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(product.imagePath!),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : const Icon(Icons.image, color: Colors.grey),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "${product.quantity} ${product.quantityType} • ₹${product.price}",
-                  style: const TextStyle(
-                    color: Color(0xFF0DF20D),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.location,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+  /// BOTTOM NAV ITEM WITH CURSOR ONLY (No Hover Effect)
+  Widget _bottomNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final bool isActive = selectedIndex == index;
 
-class BottomNav extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-
-  const BottomNav(this.icon, this.label, this.active, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: active ? const Color(0xFF0DF20D) : Colors.grey),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: active ? FontWeight.bold : FontWeight.normal,
-              color: active ? const Color(0xFF0DF20D) : Colors.grey,
+      child: GestureDetector(
+        onTap: () => _onNavTap(index),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 26, color: isActive ? primaryColor : Colors.grey),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? primaryColor : Colors.grey,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

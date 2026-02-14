@@ -6,12 +6,19 @@ import 'core/theme.dart';
 import 'providers/product_provider.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ProductProvider(),
+  runApp(const FreshFarmRoot());
+}
+
+class FreshFarmRoot extends StatelessWidget {
+  const FreshFarmRoot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => ProductProvider())],
       child: const FreshFarmApp(),
-    ),
-  );
+    );
+  }
 }
 
 class FreshFarmApp extends StatelessWidget {
@@ -20,6 +27,7 @@ class FreshFarmApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: "Fresh Farm",
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.splash,

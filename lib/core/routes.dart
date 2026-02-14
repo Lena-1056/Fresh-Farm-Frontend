@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fresh_farm/screens/farmer/completed_orders_screen.dart';
+import 'package:fresh_farm/screens/farmer/inprogress_orders_screen.dart';
 
 /// 🔹 Auth Screens
 import '../screens/splash_screen.dart';
@@ -24,7 +26,6 @@ import '../screens/buyer/order_tracking_screen.dart';
 import '../screens/admin/admin_dashboard.dart';
 
 class AppRoutes {
-
   // =========================
   // 🔹 AUTH ROUTES
   // =========================
@@ -47,6 +48,10 @@ class AppRoutes {
   static const addProduct = "/addProduct";
   static const farmerOrders = "/farmerOrders";
 
+  // Farmer Orders Tabs
+  static const inProgressOrders = "/inProgressOrders";
+  static const completedOrders = "/completedOrders";
+
   // =========================
   // 🔹 BUYER ROUTES
   // =========================
@@ -64,7 +69,6 @@ class AppRoutes {
   // 🔹 ROUTES MAP
   // =========================
   static Map<String, WidgetBuilder> routes = {
-
     // Auth
     splash: (_) => const SplashScreen(),
     onboarding: (_) => const OnboardingScreen(),
@@ -80,6 +84,8 @@ class AppRoutes {
     farmerDashboard: (_) => const FarmerDashboard(),
     addProduct: (_) => const AddProductScreen(),
     farmerOrders: (_) => const FarmerOrdersScreen(),
+    inProgressOrders: (_) => const InProgressOrdersScreen(),
+    completedOrders: (_) => const CompletedOrdersScreen(),
 
     // Buyer Screens (if opened separately)
     buyerDashboard: (_) => const BuyerDashboard(),
