@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'core/routes.dart';
 import 'core/theme.dart';
+import 'providers/product_provider.dart';
 
 void main() {
-  runApp(const FreshFarmApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ProductProvider(),
+      child: const FreshFarmApp(),
+    ),
+  );
 }
 
 class FreshFarmApp extends StatelessWidget {
