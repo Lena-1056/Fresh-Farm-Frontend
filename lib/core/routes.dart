@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fresh_farm/screens/farmer/completed_orders_screen.dart';
+import 'package:fresh_farm/screens/farmer/edit_farmer_profile_screen.dart';
+import 'package:fresh_farm/screens/farmer/farmer_profile_screen.dart';
 import 'package:fresh_farm/screens/farmer/inprogress_orders_screen.dart';
 import '../screens/farmer/farmer_inventory_screen.dart';
 
@@ -49,6 +51,8 @@ class AppRoutes {
   static const addProduct = "/addProduct";
   static const farmerOrders = "/farmerOrders";
   static const farmerInventory = '/farmer-inventory';
+  static const farmerProfile = "/farmerProfile";
+  static const editFarmerProfile = "/editFarmerProfile";
 
   // Farmer Orders Tabs
   static const inProgressOrders = "/inProgressOrders";
@@ -91,6 +95,8 @@ class AppRoutes {
     inProgressOrders: (_) => const InProgressOrdersScreen(),
     completedOrders: (_) => const CompletedOrdersScreen(),
     farmerInventory: (_) => const FarmerInventoryScreen(),
+    farmerProfile: (_) => const FarmerProfileScreen(),
+    editFarmerProfile: (_) => const EditFarmerProfileScreen(),
 
     // Buyer Screens (if opened separately)
     buyerDashboard: (_) => const BuyerDashboard(),

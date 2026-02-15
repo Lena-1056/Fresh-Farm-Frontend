@@ -60,12 +60,15 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
     });
 
     if (index == 0) {
-      Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
+      Navigator.pushNamed(context, AppRoutes.farmerDashboard);
     }
 
-    /// ✅ INVENTORY NAVIGATION ADDED
     if (index == 2) {
-      Navigator.pushReplacementNamed(context, AppRoutes.farmerInventory);
+      Navigator.pushNamed(context, AppRoutes.farmerInventory);
+    }
+
+    if (index == 3) {
+      Navigator.pushNamed(context, AppRoutes.farmerProfile);
     }
   }
 
@@ -89,9 +92,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF6F8F6),
-
       bottomNavigationBar: _buildBottomNav(),
-
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -113,8 +114,6 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       ),
     );
   }
-
-  /// ================= SEARCH + FILTER =================
 
   Widget _buildSearchAndFilter() {
     return Row(
@@ -139,6 +138,8 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           ),
         ),
         const SizedBox(width: 12),
+
+        /// CURSOR ADDED
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: PopupMenuButton<String>(
@@ -166,67 +167,61 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
     );
   }
 
-  /// ================= ORDER CARD =================
-
   Widget _orderCard(Order order) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      order.customer,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.customer,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
-                    Text("ID: ${order.id}"),
-                  ],
+                  ),
+                  Text("ID: ${order.id}"),
+                ],
+              ),
+              _statusBadge(order.status),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...order.items.map((e) => Text(e)).toList(),
+          const SizedBox(height: 20),
+
+          if (order.status != OrderStatus.completed)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: ElevatedButton(
+                onPressed: () => _updateOrderStatus(order),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.black,
                 ),
-                _statusBadge(order.status),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...order.items.map((e) => Text(e)).toList(),
-            const SizedBox(height: 20),
-            if (order.status != OrderStatus.completed)
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: ElevatedButton(
-                  onPressed: () => _updateOrderStatus(order),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.black,
-                  ),
-                  child: Text(
-                    order.status == OrderStatus.pending
-                        ? "Mark as Ready"
-                        : "Mark as Delivered",
-                  ),
+                child: Text(
+                  order.status == OrderStatus.pending
+                      ? "Mark as Ready"
+                      : "Mark as Delivered",
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
-
-  /// ================= STATUS BADGE =================
 
   Widget _statusBadge(OrderStatus status) {
     Color color;
@@ -260,8 +255,6 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
     );
   }
 
-  /// ================= BOTTOM NAV =================
-
   Widget _buildBottomNav() {
     return Container(
       height: 80,
@@ -272,27 +265,16 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _bottomNavItem(icon: Icons.dashboard, label: "Dashboard", index: 0),
-          _bottomNavItem(icon: Icons.receipt_long, label: "Orders", index: 1),
-
-          /// ✅ UPDATED INVENTORY ICON
-          _bottomNavItem(
-            icon: Icons.inventory_2_outlined,
-            label: "Inventory",
-            index: 2,
-          ),
-
-          _bottomNavItem(icon: Icons.person, label: "Profile", index: 3),
+          _bottomNavItem(Icons.dashboard, "Dashboard", 0),
+          _bottomNavItem(Icons.receipt_long, "Orders", 1),
+          _bottomNavItem(Icons.inventory_2_outlined, "Inventory", 2),
+          _bottomNavItem(Icons.person, "Profile", 3),
         ],
       ),
     );
   }
 
-  Widget _bottomNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  Widget _bottomNavItem(IconData icon, String label, int index) {
     final bool isActive = selectedIndex == index;
 
     return MouseRegion(
