@@ -28,17 +28,20 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     if (index == 2) {
       Navigator.pushNamed(context, AppRoutes.farmerInventory);
     }
+
+    if (index == 3) {
+      Navigator.pushNamed(context, AppRoutes.farmerProfile);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Always keep dashboard highlighted when this screen loads
     selectedIndex = 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F5),
 
-      /// FLOATING ADD BUTTON
+      /// FLOATING BUTTON WITH CURSOR
       floatingActionButton: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: FloatingActionButton(
@@ -50,31 +53,16 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
         ),
       ),
 
-      /// BOTTOM NAVIGATION
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _bottomNavItem(Icons.dashboard, "Dashboard", 0),
-            _bottomNavItem(Icons.receipt_long, "Orders", 1),
-            _bottomNavItem(Icons.inventory_2_outlined, "Inventory", 2),
-            _bottomNavItem(Icons.person, "Profile", 3),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomNav(),
 
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            /// ================= ROLE SWITCH WITH ICONS =================
             Align(
               alignment: Alignment.centerRight,
+
+              /// TOGGLE BUTTON CURSOR
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: ToggleButtons(
@@ -128,7 +116,6 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
 
             const SizedBox(height: 25),
 
-            /// ================= STATS =================
             Consumer<ProductProvider>(
               builder: (context, provider, child) {
                 return Row(
@@ -156,7 +143,6 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
 
             const SizedBox(height: 25),
 
-            /// ================= MY PRODUCTS =================
             const Text(
               "My Products",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -171,9 +157,9 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                 }
 
                 return Column(
-                  children: provider.products.map((product) {
-                    return _productCard(product);
-                  }).toList(),
+                  children: provider.products
+                      .map((product) => _productCard(product))
+                      .toList(),
                 );
               },
             ),
@@ -183,7 +169,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// ================= PRODUCT CARD =================
+  /// PRODUCT CARD WITH CURSOR
   Widget _productCard(ProductModel product) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -260,6 +246,26 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
+  Widget _buildBottomNav() {
+    return Container(
+      height: 80,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black12)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _bottomNavItem(Icons.dashboard, "Dashboard", 0),
+          _bottomNavItem(Icons.receipt_long, "Orders", 1),
+          _bottomNavItem(Icons.inventory_2_outlined, "Inventory", 2),
+          _bottomNavItem(Icons.person, "Profile", 3),
+        ],
+      ),
+    );
+  }
+
+  /// BOTTOM NAV WITH CURSOR
   Widget _bottomNavItem(IconData icon, String label, int index) {
     final bool isActive = selectedIndex == index;
 

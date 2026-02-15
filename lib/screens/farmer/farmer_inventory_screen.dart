@@ -13,7 +13,6 @@ class FarmerInventoryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F6),
 
-      /// ================= APP BAR =================
       appBar: AppBar(
         backgroundColor: const Color(0xFFF6F8F6),
         elevation: 0,
@@ -35,26 +34,8 @@ class FarmerInventoryScreen extends StatelessWidget {
             ),
           ],
         ),
-
-        /// ✅ SEARCH + FILTER ICONS ADDED
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              // Future search logic
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune, color: Colors.black),
-            onPressed: () {
-              // Future filter logic
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
 
-      /// ================= ADD BUTTON =================
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0DF20D),
         onPressed: () {
@@ -63,7 +44,6 @@ class FarmerInventoryScreen extends StatelessWidget {
         child: const Icon(Icons.add, color: Colors.white),
       ),
 
-      /// ================= PRODUCT LIST =================
       body: Consumer<ProductProvider>(
         builder: (context, provider, child) {
           if (provider.products.isEmpty) {
@@ -94,6 +74,7 @@ class InventoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final provider = Provider.of<ProductProvider>(context);
     final bool isLowStock = product.quantity <= 10;
 
@@ -107,10 +88,8 @@ class InventoryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          /// ================= TOP ROW =================
           Row(
             children: [
-              /// IMAGE
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: SizedBox(
@@ -126,78 +105,31 @@ class InventoryCard extends StatelessWidget {
                         ),
                 ),
               ),
-
               const SizedBox(width: 16),
-
-              /// DETAILS
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        /// ✅ EDIT ICON (Styled)
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          onPressed: () {
-                            // future edit screen
-                          },
-                        ),
-                      ],
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-
                     Text(
                       product.category,
                       style: const TextStyle(color: Colors.grey),
                     ),
-
                     const SizedBox(height: 8),
-
-                    /// QUANTITY
-                    Row(
-                      children: [
-                        Text(
-                          "${product.quantity}",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: isLowStock ? Colors.red : Colors.black,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text("${product.quantityType} remaining"),
-                      ],
-                    ),
-
-                    if (isLowStock)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "LOW STOCK",
-                          style: TextStyle(color: Colors.white, fontSize: 10),
-                        ),
+                    Text(
+                      "${product.quantity} ${product.quantityType} remaining",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isLowStock ? Colors.red : Colors.black,
                       ),
-
+                    ),
                     const SizedBox(height: 6),
-
-                    /// PRICE
                     Text(
                       "\$${product.price.toStringAsFixed(2)} / ${product.quantityType}",
                       style: const TextStyle(
@@ -207,42 +139,6 @@ class InventoryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-
-          const Divider(height: 25),
-
-          /// ================= VISIBILITY =================
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              /// ✅ PUBLIC ICON ADDED
-              Row(
-                children: [
-                  Icon(
-                    product.isOnline ? Icons.public : Icons.public_off,
-                    size: 18,
-                    color: product.isOnline ? Colors.green : Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    product.isOnline
-                        ? "Visibility: ONLINE"
-                        : "Visibility: OFFLINE",
-                    style: TextStyle(
-                      color: product.isOnline ? Colors.green : Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-
-              Switch(
-                value: product.isOnline,
-                activeColor: const Color(0xFF0DF20D),
-                onChanged: (value) {
-                  provider.toggleVisibility(index, value);
-                },
               ),
             ],
           ),

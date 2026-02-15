@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fresh_farm/providers/farmer_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'core/routes.dart';
@@ -15,7 +16,10 @@ class FreshFarmRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ProductProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => FarmerProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ],
       child: const FreshFarmApp(),
     );
   }
