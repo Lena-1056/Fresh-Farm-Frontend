@@ -15,6 +15,23 @@ class FarmerProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F4),
+
+      /// ✅ APP BAR WITH BACK BUTTON
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF4F6F4),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
+          },
+        ),
+        title: const Text(
+          "Profile",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+      ),
+
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
