@@ -1,12 +1,13 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../models/product_model.dart';
-import '../../providers/product_provider.dart';
+import '../../models/product_api_model.dart';
+import '../../providers/products_api_provider.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -17,7 +18,6 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final nameController = TextEditingController();
   final priceController = TextEditingController();
   final quantityController = TextEditingController();
@@ -29,10 +29,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
   String harvestDate = "Select Date";
   bool isOrganic = false;
 
-  List<File> imageFiles = [];
   List<Uint8List> webImages = [];
+  String? _imageUrlBase64;
 
   final greenColor = const Color(0xFF0DF20D);
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -46,36 +47,36 @@ class _AddProductScreenState extends State<AddProductScreen> {
       setState(() => location = "Location Disabled");
       return;
     }
-
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
       setState(() => location = "Permission Denied");
       return;
     }
-
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      location =
-          "${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}";
-    });
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        location =
+            "${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}";
+      });
+    } catch (_) {
+      setState(() => location = "Unavailable");
+    }
   }
 
   Future<void> pickImages() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
-
     if (pickedFiles.isEmpty) return;
-
     for (var picked in pickedFiles) {
-      if (imageFiles.length + webImages.length >= 5) break;
-
-      if (kIsWeb) {
-        webImages.add(await picked.readAsBytes());
-      } else {
-        imageFiles.add(File(picked.path));
-      }
+      if (webImages.length >= 5) break;
+      webImages.add(await picked.readAsBytes());
     }
-
+    if (webImages.isNotEmpty) {
+      final b64 = base64Encode(webImages.first);
+      _imageUrlBase64 = b64.length <= 100000
+          ? "data:image/jpeg;base64,$b64"
+          : null;
+    }
     setState(() {});
   }
 
@@ -86,32 +87,49 @@ class _AddProductScreenState extends State<AddProductScreen> {
       firstDate: DateTime(2023),
       lastDate: DateTime(2100),
     );
-
     if (selected != null) {
-      setState(() {
-        harvestDate = "${selected.day}/${selected.month}/${selected.year}";
-      });
+      setState(
+        () =>
+            harvestDate = "${selected.day}/${selected.month}/${selected.year}",
+      );
     }
   }
 
-  void submitProduct() {
-    if (_formKey.currentState!.validate()) {
-      final product = ProductModel(
-        name: nameController.text,
-        category: category,
-        price: double.parse(priceController.text),
-        quantity: int.parse(quantityController.text),
-        quantityType: quantityType,
-        location: location,
-        description: descriptionController.text,
-        isOrganic: isOrganic,
-        harvestDate: harvestDate,
-        webImage: webImages.isNotEmpty ? webImages.first : null,
-        imagePath: imageFiles.isNotEmpty ? imageFiles.first.path : null,
-      );
+  void submitProduct() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      Provider.of<ProductProvider>(context, listen: false).addProduct(product);
+    setState(() => isLoading = true);
+
+    // ✅ FIXED: Only description text
+    final desc = descriptionController.text;
+
+    final product = ProductApiModel(
+      id: 0,
+      name: nameController.text,
+      description: desc,
+      price: double.tryParse(priceController.text) ?? 0,
+      quantity: int.tryParse(quantityController.text) ?? 0,
+      unit: quantityType,
+      imageUrl: _imageUrlBase64,
+      category: category,
+    );
+
+    try {
+      await context.read<ProductsApiProvider>().addProduct(product);
+      if (!mounted) return;
+      setState(() => isLoading = false);
       Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Error: ${e.toString().replaceFirst('Exception: ', '')}",
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -144,24 +162,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            /// IMAGE SECTION
             const Text(
               "Produce Photos",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 12),
-
             Wrap(
               spacing: 12,
               runSpacing: 12,
               children: [
-                ...imageFiles.map(
-                  (img) => buildImageBox(Image.file(img, fit: BoxFit.cover)),
+                ...webImages.asMap().entries.map(
+                  (e) =>
+                      buildImageBox(Image.memory(e.value, fit: BoxFit.cover)),
                 ),
-                ...webImages.map(
-                  (img) => buildImageBox(Image.memory(img, fit: BoxFit.cover)),
-                ),
-                if (imageFiles.length + webImages.length < 5)
+                if (webImages.length < 5)
                   GestureDetector(
                     onTap: pickImages,
                     child: Container(
@@ -176,18 +190,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
               ],
             ),
-
             const SizedBox(height: 25),
-
             TextFormField(
               controller: nameController,
               decoration: modernInput("Product Name"),
               validator: (value) =>
                   value!.isEmpty ? "Enter product name" : null,
             ),
-
             const SizedBox(height: 20),
-
             DropdownButtonFormField(
               value: category,
               items: [
@@ -199,9 +209,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               onChanged: (value) => setState(() => category = value!),
               decoration: modernInput("Category"),
             ),
-
             const SizedBox(height: 20),
-
             Row(
               children: [
                 Expanded(
@@ -224,9 +232,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             DropdownButtonFormField(
               value: quantityType,
               items: [
@@ -238,18 +244,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
               onChanged: (value) => setState(() => quantityType = value!),
               decoration: modernInput("Unit"),
             ),
-
             const SizedBox(height: 20),
-
             TextFormField(
               controller: descriptionController,
               maxLines: 4,
               decoration: modernInput("Description"),
             ),
-
             const SizedBox(height: 20),
-
-            /// ORGANIC + HARVEST DATE
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -287,10 +288,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
-
-            /// LOCATION
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -311,9 +309,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 30),
-
             SizedBox(
               height: 55,
               child: ElevatedButton(
@@ -324,15 +320,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                   elevation: 6,
                 ),
-                onPressed: submitProduct,
-                child: const Text(
-                  "Post Product 🚀",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                onPressed: isLoading ? null : submitProduct,
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Post Product 🚀",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ],

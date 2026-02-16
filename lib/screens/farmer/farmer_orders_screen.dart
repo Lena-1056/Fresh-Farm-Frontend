@@ -1,21 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/routes.dart';
-
-enum OrderStatus { pending, inProgress, completed }
-
-class Order {
-  final String customer;
-  final String id;
-  final List<String> items;
-  OrderStatus status;
-
-  Order({
-    required this.customer,
-    required this.id,
-    required this.items,
-    required this.status,
-  });
-}
+import '../../models/order_api_model.dart';
+import '../../providers/orders_provider.dart';
 
 class FarmerOrdersScreen extends StatefulWidget {
   const FarmerOrdersScreen({super.key});
@@ -27,65 +14,30 @@ class FarmerOrdersScreen extends StatefulWidget {
 class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
   int selectedIndex = 1;
   final Color primaryColor = const Color(0xFF0DF20D);
-
   String selectedFilter = "All";
 
-  final List<Order> orders = [
-    Order(
-      customer: "Marcus Richardson",
-      id: "#ORD-9921",
-      items: [
-        "Organic Heirloom Carrots - 5kg",
-        "Grass-fed Jersey Milk - 2L",
-        "Farm Fresh Eggs - 2 Dozen",
-      ],
-      status: OrderStatus.pending,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrdersProvider>().fetchMyOrders();
+    });
+  }
 
-  List<Order> get filteredOrders {
-    if (selectedFilter == "Pending") {
-      return orders.where((o) => o.status == OrderStatus.pending).toList();
-    } else if (selectedFilter == "In Progress") {
-      return orders.where((o) => o.status == OrderStatus.inProgress).toList();
+  List<OrderApiModel> filteredOrders(List<OrderApiModel> orders) {
+    if (selectedFilter == "In Progress") {
+      return orders.where((o) => o.status == "IN_PROGRESS").toList();
     } else if (selectedFilter == "Completed") {
-      return orders.where((o) => o.status == OrderStatus.completed).toList();
+      return orders.where((o) => o.status == "COMPLETED").toList();
     }
     return orders;
   }
 
   void _onNavTap(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-
-    if (index == 0) {
-      Navigator.pushNamed(context, AppRoutes.farmerDashboard);
-    }
-
-    if (index == 2) {
-      Navigator.pushNamed(context, AppRoutes.farmerInventory);
-    }
-
-    if (index == 3) {
-      Navigator.pushNamed(context, AppRoutes.farmerProfile);
-    }
-  }
-
-  void _handleFilter(String value) {
-    setState(() {
-      selectedFilter = value;
-    });
-  }
-
-  void _updateOrderStatus(Order order) {
-    setState(() {
-      if (order.status == OrderStatus.pending) {
-        order.status = OrderStatus.inProgress;
-      } else if (order.status == OrderStatus.inProgress) {
-        order.status = OrderStatus.completed;
-      }
-    });
+    setState(() => selectedIndex = index);
+    if (index == 0) Navigator.pushNamed(context, AppRoutes.farmerDashboard);
+    if (index == 2) Navigator.pushNamed(context, AppRoutes.farmerInventory);
+    if (index == 3) Navigator.pushNamed(context, AppRoutes.farmerProfile);
   }
 
   @override
@@ -94,22 +46,37 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       backgroundColor: const Color(0xffF6F8F6),
       bottomNavigationBar: _buildBottomNav(),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text(
-              "Orders",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildSearchAndFilter(),
-            const SizedBox(height: 25),
-
-            if (filteredOrders.isEmpty)
-              const Center(child: Text("No orders found")),
-
-            ...filteredOrders.map((order) => _orderCard(order)).toList(),
-          ],
+        child: Consumer<OrdersProvider>(
+          builder: (context, provider, _) {
+            if (provider.loading && provider.orders.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (provider.error != null && provider.orders.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(provider.error!, style: const TextStyle(color: Colors.red)),
+                ),
+              );
+            }
+            final orders = filteredOrders(provider.orders);
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  "Orders",
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                _buildSearchAndFilter(),
+                const SizedBox(height: 25),
+                if (orders.isEmpty)
+                  const Center(child: Text("No orders found"))
+                else
+                  ...orders.map((order) => _orderCard(context, order, provider)),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -124,9 +91,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: const [
-                BoxShadow(blurRadius: 6, color: Colors.black12),
-              ],
+              boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
             ),
             child: const TextField(
               decoration: InputDecoration(
@@ -138,36 +103,29 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           ),
         ),
         const SizedBox(width: 12),
-
-        /// CURSOR ADDED
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: PopupMenuButton<String>(
-            onSelected: _handleFilter,
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: "All", child: Text("All")),
-              PopupMenuItem(value: "Pending", child: Text("Pending")),
-              PopupMenuItem(value: "In Progress", child: Text("In Progress")),
-              PopupMenuItem(value: "Completed", child: Text("Completed")),
-            ],
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: const [
-                  BoxShadow(blurRadius: 6, color: Colors.black12),
-                ],
-              ),
-              child: const Icon(Icons.filter_list),
+        PopupMenuButton<String>(
+          onSelected: (value) => setState(() => selectedFilter = value),
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: "All", child: Text("All")),
+            PopupMenuItem(value: "In Progress", child: Text("In Progress")),
+            PopupMenuItem(value: "Completed", child: Text("Completed")),
+          ],
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
             ),
+            child: const Icon(Icons.filter_list),
           ),
         ),
       ],
     );
   }
 
-  Widget _orderCard(Order order) {
+  Widget _orderCard(BuildContext context, OrderApiModel order, OrdersProvider provider) {
+    final isInProgress = order.status == "IN_PROGRESS";
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
@@ -186,72 +144,52 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    order.customer,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    order.buyerName ?? "Customer",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  Text("ID: ${order.id}"),
+                  Text("ID: #${order.id}"),
                 ],
               ),
               _statusBadge(order.status),
             ],
           ),
           const SizedBox(height: 16),
-          ...order.items.map((e) => Text(e)).toList(),
+          Text("${order.productName ?? 'Product'} × ${order.quantity}"),
+          Text("₹${order.totalPrice.toStringAsFixed(2)}"),
           const SizedBox(height: 20),
-
-          if (order.status != OrderStatus.completed)
-            MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: ElevatedButton(
-                onPressed: () => _updateOrderStatus(order),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.black,
-                ),
-                child: Text(
-                  order.status == OrderStatus.pending
-                      ? "Mark as Ready"
-                      : "Mark as Delivered",
-                ),
-              ),
+          if (isInProgress)
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await provider.completeOrder(order.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Order completed")));
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor, foregroundColor: Colors.black),
+              child: const Text("Mark as Delivered"),
             ),
         ],
       ),
     );
   }
 
-  Widget _statusBadge(OrderStatus status) {
-    Color color;
-    String text;
-
-    switch (status) {
-      case OrderStatus.pending:
-        color = Colors.orange;
-        text = "Pending";
-        break;
-      case OrderStatus.inProgress:
-        color = Colors.blue;
-        text = "In Progress";
-        break;
-      case OrderStatus.completed:
-        color = Colors.green;
-        text = "Completed";
-        break;
-    }
-
+  Widget _statusBadge(String status) {
+    Color color = status == "COMPLETED" ? Colors.green : Colors.orange;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
+      child: Text(status.replaceAll('_', ' '), style: TextStyle(color: color, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -276,26 +214,22 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
 
   Widget _bottomNavItem(IconData icon, String label, int index) {
     final bool isActive = selectedIndex == index;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _onNavTap(index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isActive ? primaryColor : Colors.grey),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? primaryColor : Colors.grey,
-              ),
+    return GestureDetector(
+      onTap: () => _onNavTap(index),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: isActive ? primaryColor : Colors.grey),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? primaryColor : Colors.grey,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
