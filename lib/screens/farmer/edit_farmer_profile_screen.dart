@@ -15,6 +15,7 @@ class EditFarmerProfileScreen extends StatefulWidget {
 
 class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
   late TextEditingController ownerController;
+  late TextEditingController farmNameController;
   late TextEditingController locationController;
   late TextEditingController emailController;
   late TextEditingController phoneController;
@@ -73,6 +74,7 @@ class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
     farmer = provider.farmer;
 
     ownerController = TextEditingController(text: farmer?.ownerName ?? "");
+    farmNameController = TextEditingController(text: farmer?.farmName ?? "");
     locationController = TextEditingController(text: farmer?.location ?? "");
     emailController = TextEditingController(text: farmer?.email ?? "");
     phoneController = TextEditingController(text: farmer?.phone ?? "");
@@ -151,9 +153,9 @@ class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
             /// ================= BASIC INFO =================
             _sectionTitle("Basic Information"),
             _card([
-              _field(ownerController, "Owner Name"),
+              _field(ownerController, "Owner Name", readOnly: true),
               _locationField(),
-              _field(emailController, "Email"),
+              _field(emailController, "Email", readOnly: true),
               _field(phoneController, "Phone"),
             ]),
 
@@ -162,6 +164,7 @@ class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
             /// ================= FARM DETAILS =================
             _sectionTitle("Farm Details"),
             _card([
+              _field(farmNameController, "Farm Name"),
               _dropdown(
                 "Farming Type",
                 selectedFarmingType,
@@ -207,24 +210,30 @@ class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: () {
-                  provider.updateFarmer(
-                    FarmerModel(
-                      ownerName: ownerController.text,
-                      farmName: "",
-                      location: locationController.text,
-                      email: emailController.text,
-                      phone: phoneController.text,
-                      farmingType: selectedFarmingType ?? "",
-                      farmSize: selectedFarmSize ?? "",
-                      irrigation: selectedIrrigation ?? "",
-                      mainCrops: mainCropsController.text,
-                      harvestFrequency: selectedHarvestFrequency ?? "",
-                      isAvailable: farmer?.isAvailable ?? true,
-                    ),
+                onPressed: () async {
+                  final updated = FarmerModel(
+                    ownerName: farmer?.ownerName ?? ownerController.text,
+                    farmName: farmNameController.text,
+                    location: locationController.text,
+                    email: farmer?.email ?? emailController.text,
+                    phone: phoneController.text,
+                    farmingType: selectedFarmingType ?? "",
+                    farmSize: selectedFarmSize ?? "",
+                    irrigation: selectedIrrigation ?? "",
+                    mainCrops: mainCropsController.text,
+                    harvestFrequency: selectedHarvestFrequency ?? "",
+                    isAvailable: farmer?.isAvailable ?? true,
                   );
-
-                  Navigator.pop(context);
+                  try {
+                    await provider.saveProfile(updated);
+                    if (mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed to save: ${e.toString().replaceFirst('Exception: ', '')}")),
+                      );
+                    }
+                  }
                 },
                 child: const Text(
                   "Save Changes",
@@ -290,11 +299,13 @@ class _EditFarmerProfileScreenState extends State<EditFarmerProfileScreen> {
     TextEditingController controller,
     String label, {
     int maxLines = 1,
+    bool readOnly = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: controller,
+        readOnly: readOnly,
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,

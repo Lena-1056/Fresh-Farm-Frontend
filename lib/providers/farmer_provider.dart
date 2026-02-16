@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import '../models/farmer_model.dart';
+import '../services/api_service.dart';
 
 class FarmerProvider extends ChangeNotifier {
   FarmerModel _farmer = FarmerModel(
-    ownerName: "Farmer Joe",
-    farmName: "Green Valley Farms",
-    location: "Willow Creek, OR",
-    email: "farmer@email.com",
-    phone: "+91 9876543210",
-    farmingType: "Organic",
-    farmSize: "5 Acres",
-    irrigation: "Drip Irrigation",
-    mainCrops: "Carrots, Tomatoes",
-    harvestFrequency: "Weekly",
+    ownerName: "",
+    farmName: "",
+    location: "",
+    email: "",
+    phone: "",
+    farmingType: "",
+    farmSize: "",
+    irrigation: "",
+    mainCrops: "",
+    harvestFrequency: "",
     isAvailable: true,
   );
-  //FarmerModel? _farmer;
-  //   FarmerModel? get farmer => _farmer;
+
   FarmerModel get farmer => _farmer;
 
-  void initializeFarmer({required String name, required String email}) {
+  /// Call after farmer login/register: show name and email on profile, rest empty.
+  void initializeFromAuth({required String name, required String email}) {
     _farmer = FarmerModel(
       ownerName: name,
       email: email,
@@ -33,7 +34,58 @@ class FarmerProvider extends ChangeNotifier {
       harvestFrequency: "",
       isAvailable: true,
     );
+    notifyListeners();
+  }
 
+  /// Load profile from database (after edit, details will appear here).
+  Future<void> loadProfile() async {
+    try {
+      final res = await ApiService.getProfile();
+      _farmer = FarmerModel(
+        ownerName: res.name,
+        email: res.email,
+        farmName: res.farmName ?? "",
+        location: res.location ?? "",
+        phone: res.phone ?? "",
+        farmingType: res.farmingType ?? "",
+        farmSize: res.farmSize ?? "",
+        irrigation: res.irrigation ?? "",
+        mainCrops: res.mainCrops ?? "",
+        harvestFrequency: res.harvestFrequency ?? "",
+        isAvailable: res.isAvailable,
+      );
+      notifyListeners();
+    } catch (_) {
+      // Keep current _farmer if API fails (e.g. first time)
+    }
+  }
+
+  /// Save profile to database; then update local state from response.
+  Future<void> saveProfile(FarmerModel updated) async {
+    final res = await ApiService.updateProfile({
+      "phone": updated.phone.isEmpty ? null : updated.phone,
+      "farmName": updated.farmName.isEmpty ? null : updated.farmName,
+      "location": updated.location.isEmpty ? null : updated.location,
+      "farmingType": updated.farmingType.isEmpty ? null : updated.farmingType,
+      "farmSize": updated.farmSize.isEmpty ? null : updated.farmSize,
+      "irrigation": updated.irrigation.isEmpty ? null : updated.irrigation,
+      "mainCrops": updated.mainCrops.isEmpty ? null : updated.mainCrops,
+      "harvestFrequency": updated.harvestFrequency.isEmpty ? null : updated.harvestFrequency,
+      "isAvailable": updated.isAvailable,
+    });
+    _farmer = FarmerModel(
+      ownerName: res.name,
+      email: res.email,
+      farmName: res.farmName ?? "",
+      location: res.location ?? "",
+      phone: res.phone ?? "",
+      farmingType: res.farmingType ?? "",
+      farmSize: res.farmSize ?? "",
+      irrigation: res.irrigation ?? "",
+      mainCrops: res.mainCrops ?? "",
+      harvestFrequency: res.harvestFrequency ?? "",
+      isAvailable: res.isAvailable,
+    );
     notifyListeners();
   }
 
@@ -61,7 +113,6 @@ class FarmerProvider extends ChangeNotifier {
       harvestFrequency: "",
       isAvailable: false,
     );
-
     notifyListeners();
   }
 }

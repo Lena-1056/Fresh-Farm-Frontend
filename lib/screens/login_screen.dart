@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/routes.dart';
-import '../services/api_service.dart';
+import '../providers/auth_provider.dart';
+import '../providers/farmer_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,7 +12,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -24,37 +25,36 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      final result = await ApiService.login(
+      final auth = context.read<AuthProvider>();
+      await auth.login(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
 
+      if (!mounted) return;
       setState(() => isLoading = false);
 
-      // ✅ FIXED CONDITION
-      if (result["id"] != null) {
-
-        String role = result["role"];
-
-        if (role == "FARMER") {
-          Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
-        } else if (role == "BUYER") {
-          Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
-        } else {
-          Navigator.pushReplacementNamed(context, AppRoutes.role);
-        }
-
+      final role = auth.userRole ?? '';
+      if (role == 'FARMER') {
+        context.read<FarmerProvider>().initializeFromAuth(
+          name: auth.userName ?? '',
+          email: auth.userEmail ?? '',
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.farmerDashboard);
+      } else if (role == 'BUYER') {
+        Navigator.pushReplacementNamed(context, AppRoutes.buyerDashboard);
+      } else if (role == 'ADMIN') {
+        Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
       } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.role);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login Failed")),
+          SnackBar(content: Text("Error: ${e.toString().replaceFirst('Exception: ', '')}")),
         );
       }
-
-    } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.toString()}")),
-      );
     }
   }
 
@@ -70,38 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
               key: _formKey,
               child: Column(
                 children: [
-
-                  const Icon(Icons.eco,
-                      size: 70, color: Color(0xFF0DF20D)),
-
+                  const Icon(Icons.eco, size: 70, color: Color(0xFF0DF20D)),
                   const SizedBox(height: 20),
-
                   const Text(
                     "Welcome Back",
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 40),
-
                   _buildTextField(
                     controller: emailController,
                     hint: "Email",
                     icon: Icons.email_outlined,
                   ),
-
                   const SizedBox(height: 20),
-
                   _buildTextField(
                     controller: passwordController,
                     hint: "Password",
                     icon: Icons.lock_outline,
                     isPassword: true,
                   ),
-
                   const SizedBox(height: 30),
-
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -114,9 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       onPressed: isLoading ? null : handleLogin,
                       child: isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.black,
-                            )
+                          ? const CircularProgressIndicator(color: Colors.black)
                           : const Text(
                               "Sign In",
                               style: TextStyle(
@@ -126,13 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.signup);
-                    },
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
                     child: const Text(
                       "Don't have an account? Sign Up",
                       style: TextStyle(
@@ -159,8 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: controller,
       obscureText: isPassword ? _obscurePassword : false,
-      validator: (value) =>
-          value == null || value.isEmpty ? "Required" : null,
+      validator: (value) => value == null || value.isEmpty ? "Required" : null,
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white,
@@ -169,14 +150,10 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off
-                      : Icons.visibility,
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
                 ),
                 onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
+                  setState(() => _obscurePassword = !_obscurePassword);
                 },
               )
             : null,

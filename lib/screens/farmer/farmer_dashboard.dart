@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/routes.dart';
-import '../../providers/product_provider.dart';
-import '../../models/product_model.dart';
+import '../../models/product_api_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/farmer_provider.dart';
+import '../../providers/products_api_provider.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -18,51 +19,57 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
 
   final Color primaryColor = const Color(0xFF0DF20D);
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = context.read<AuthProvider>().userId;
+      if (userId != null) {
+        context.read<ProductsApiProvider>().fetchFarmerProducts(
+          int.parse(userId),
+        );
+      }
+    });
+  }
+
   void _onNavTap(int index) {
     if (index == 0) return;
-
-    if (index == 1) {
-      Navigator.pushNamed(context, AppRoutes.farmerOrders);
-    }
-
-    if (index == 2) {
-      Navigator.pushNamed(context, AppRoutes.farmerInventory);
-    }
-
-    if (index == 3) {
-      Navigator.pushNamed(context, AppRoutes.farmerProfile);
-    }
+    if (index == 1) Navigator.pushNamed(context, AppRoutes.farmerOrders);
+    if (index == 2) Navigator.pushNamed(context, AppRoutes.farmerInventory);
+    if (index == 3) Navigator.pushNamed(context, AppRoutes.farmerProfile);
   }
 
   @override
   Widget build(BuildContext context) {
     selectedIndex = 0;
+    final farmerName = context.watch<FarmerProvider>().farmer.ownerName;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F8F5),
-
-      /// FLOATING BUTTON WITH CURSOR
       floatingActionButton: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: FloatingActionButton(
           backgroundColor: primaryColor,
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.addProduct);
+          onPressed: () async {
+            await Navigator.pushNamed(context, AppRoutes.addProduct);
+            if (!context.mounted) return;
+            final userId = context.read<AuthProvider>().userId;
+            if (userId != null) {
+              context.read<ProductsApiProvider>().fetchFarmerProducts(
+                int.parse(userId),
+              );
+            }
           },
           child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
-
       bottomNavigationBar: _buildBottomNav(),
-
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Align(
               alignment: Alignment.centerRight,
-
-              /// TOGGLE BUTTON CURSOR
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: ToggleButtons(
@@ -106,56 +113,47 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
-            const Text(
-              "Farmer Joe",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Text(
+              farmerName.isEmpty ? "Farmer" : farmerName,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 25),
-
-            Consumer<ProductProvider>(
+            Consumer<ProductsApiProvider>(
               builder: (context, provider, child) {
+                final products = provider.products;
                 return Row(
                   children: [
                     Expanded(
-                      child: _statCard(
-                        "Products",
-                        provider.products.length.toString(),
-                      ),
+                      child: _statCard("Products", products.length.toString()),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _statCard(
-                        "Active",
-                        provider.products
-                            .where((p) => p.isOnline)
-                            .length
-                            .toString(),
-                      ),
+                      child: _statCard("Active", products.length.toString()),
                     ),
                   ],
                 );
               },
             ),
-
             const SizedBox(height: 25),
-
             const Text(
               "My Products",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 12),
-
-            Consumer<ProductProvider>(
+            Consumer<ProductsApiProvider>(
               builder: (context, provider, child) {
-                if (provider.products.isEmpty) {
-                  return const Text("No products yet");
+                if (provider.loading && provider.products.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
-
+                if (provider.products.isEmpty) {
+                  return const Text(
+                    "No products yet. Add one using the + button.",
+                  );
+                }
                 return Column(
                   children: provider.products
                       .map((product) => _productCard(product))
@@ -169,8 +167,7 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// PRODUCT CARD WITH CURSOR
-  Widget _productCard(ProductModel product) {
+  Widget _productCard(ProductApiModel product) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Container(
@@ -188,10 +185,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
               child: SizedBox(
                 height: 60,
                 width: 60,
-                child: product.webImage != null
-                    ? Image.memory(product.webImage!, fit: BoxFit.cover)
-                    : product.imagePath != null
-                    ? Image.file(File(product.imagePath!), fit: BoxFit.cover)
+                child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                    ? Image.network(product.imageUrl!, fit: BoxFit.cover)
                     : Container(
                         color: Colors.grey.shade200,
                         child: const Icon(Icons.image),
@@ -211,10 +206,46 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    "₹${product.price.toStringAsFixed(0)} per ${product.quantityType}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  // Text(
+                  //   "₹${product.price.toStringAsFixed(0)} • Qty: ${product.quantity}",
+                  //   style: const TextStyle(fontWeight: FontWeight.bold),
+                  // ),
+                  if (product.discount != null && product.discount! > 0)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "-${product.discount!.toStringAsFixed(0)}%",
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "₹${product.discountedPrice!.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "M.R.P ₹${product.price.toStringAsFixed(0)}",
+                          style: const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      "₹${product.price.toStringAsFixed(0)} • Qty: ${product.quantity}",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                 ],
               ),
             ),
@@ -265,10 +296,8 @@ class _FarmerDashboardState extends State<FarmerDashboard> {
     );
   }
 
-  /// BOTTOM NAV WITH CURSOR
   Widget _bottomNavItem(IconData icon, String label, int index) {
     final bool isActive = selectedIndex == index;
-
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(

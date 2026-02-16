@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fresh_farm/models/product_api_model.dart';
 import 'package:fresh_farm/screens/farmer/completed_orders_screen.dart';
 import 'package:fresh_farm/screens/farmer/edit_farmer_profile_screen.dart';
+import 'package:fresh_farm/screens/farmer/edit_product_screen.dart';
 import 'package:fresh_farm/screens/farmer/farmer_profile_screen.dart';
 import 'package:fresh_farm/screens/farmer/inprogress_orders_screen.dart';
 import '../screens/farmer/farmer_inventory_screen.dart';
@@ -49,6 +51,7 @@ class AppRoutes {
   // =========================
   static const farmerDashboard = "/farmerDashboard";
   static const addProduct = "/addProduct";
+  static const String editProduct = "/edit-product";
   static const farmerOrders = "/farmerOrders";
   static const farmerInventory = '/farmer-inventory';
   static const farmerProfile = "/farmerProfile";
@@ -88,6 +91,11 @@ class AppRoutes {
     buyerMain: (_) => const BuyerMainScreen(),
     farmerMain: (_) => const FarmerMainScreen(),
 
+    editProduct: (context) {
+      final product =
+          ModalRoute.of(context)!.settings.arguments as ProductApiModel;
+      return EditProductScreen(product: product);
+    },
     // Farmer Screens (if opened separately)
     farmerDashboard: (_) => const FarmerDashboard(),
     addProduct: (_) => const AddProductScreen(),
@@ -100,7 +108,7 @@ class AppRoutes {
 
     // Buyer Screens (if opened separately)
     buyerDashboard: (_) => const BuyerDashboard(),
-    productDetail: (_) => const ProductDetailScreen(),
+    productDetail: (_) => const ProductDetailScreen(product: null),
     cart: (_) => const CartScreen(),
     tracking: (_) => const OrderTrackingScreen(),
 
